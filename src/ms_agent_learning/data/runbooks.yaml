@@ -1,0 +1,65 @@
+- id: auth-001
+  service: authentication
+  issue: elevated login failures
+  summary: |
+    Users report elevated login failures when authenticating via the OAuth redirect.
+  diagnostics:
+    - Inspect recent deploys affecting the authentication stack.
+    - Query aggregated error rate metrics and cross-region comparisons.
+    - Confirm dependency health for Redis session cache and Azure AD B2C endpoints.
+  remediation:
+    - Roll back the most recent authentication-service deployment if metrics regressed after release.
+    - Clear the Redis cache namespace to remove corrupt session state.
+    - Switch traffic to the secondary region using the traffic manager profile whilst investigating.
+  communications:
+    - Status page update referencing authentication service disruption and mitigation timeline.
+    - Notify customer support with workaround instructions for affected tenants.
+
+- id: payments-004
+  service: payments-api
+  issue: stripe downstream timeout
+  summary: |
+    Payment API encounters downstream timeouts calling Stripe charge endpoints leading to retries.
+  diagnostics:
+    - Compare p95 latency between Stripe primary and secondary endpoints.
+    - Inspect retry queue depth in the payments ingestion worker.
+    - Review recent configuration changes to outbound firewall rules.
+  remediation:
+    - Temporarily route through the secondary Stripe endpoint configured in azure api management.
+    - Increase the circuit breaker timeout by 2x and clear failed jobs for reprocessing.
+    - Engage Stripe support with correlation IDs collected from logs.
+  communications:
+    - Finance stakeholders broadcast detailing impact on new charge authorisations.
+
+- id: messaging-007
+  service: notification-hub
+  issue: fcm delivery drop
+  summary: |
+    Firebase Cloud Messaging delivery rate drops below SLA thresholds for Android push notifications.
+  diagnostics:
+    - Correlate delivery metrics with Firebase status dashboard updates.
+    - Examine cellular carrier distribution for impacted regions.
+    - Verify signing certificates have not expired for Android app variants.
+  remediation:
+    - Regenerate Android service account keys and upload them to Firebase project settings.
+    - Re-queue failed notifications, spacing batches by 30 seconds to avoid throttling.
+    - Trigger synthetic notifications to validate end-to-end recovery.
+  communications:
+    - Marketing stakeholders update highlighting potential push delays.
+    - Incident channel ping for mobile-app product owners.
+
+- id: core-002
+  service: platform-core
+  issue: elevated latency
+  summary: |
+    Platform core service experiences general latency spikes on the write path.
+  diagnostics:
+    - Inspect database write contention metrics and deadlock logs.
+    - Compare CPU utilisation across the app service plan scale set.
+    - Validate the Redis cache hit ratio and eviction metrics.
+  remediation:
+    - Scale out the app service plan by +2 instances and enable auto-scale for the next 4 hours.
+    - Flush and warm up Redis cache shards to reduce cold-miss penalties.
+    - Apply the pending index tuning pack for the primary SQL database after confirming zero blocking sessions.
+  communications:
+    - Engineering org-wide update to align on potential read-side staleness during recovery.
